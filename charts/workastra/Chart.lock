@@ -1,0 +1,6 @@
+dependencies:
+- name: desk
+  repository: file://../desk
+  version: 0.2.0
+digest: sha256:ba4040d5e859619e90d61f1d53c1664dc8f649550f436e0a64e08b5b0c3be35e
+generated: "2026-02-22T15:41:16.987061884+07:00"
