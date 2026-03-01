@@ -1,6 +1,0 @@
-dependencies:
-- name: desk
-  repository: file://./charts/desk
-  version: 0.1.0
-digest: sha256:a046ce4ac04209a6ae236a7e9dcece1155ca4bb3da1ff8ffcffe74dd3130336d
-generated: "2026-02-17T23:08:26.261469166+07:00"
