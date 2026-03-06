@@ -6,7 +6,7 @@ metadata:
     {{- include "desk.labels" . | nindent 4 }}
 data:
   .env.production: |
-    APP_BASE_URL={{ .Values.tenant.scheme }}://{{ .Values.tenant.domain }}
+    APP_BASE_URL={{ .Values.global.tenant.scheme }}://{{ .Values.global.tenant.domain }}
     IAM_ISSUER_URL=http://localhost:9000
     IAM_TLS_SKIP_VERIFY=true
     IAM_OAUTH_CLIENT_ID=workastra-desk

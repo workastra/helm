@@ -1,11 +1,11 @@
-desk:
-  # Toggle to enable or disable the deployment of the Desk application module.
-  enabled: true
-
+global:
   tenant:
     scheme: http
     domain: workastra.com
 
+desk:
+  install: true
+  
   httpRoute:
     enabled: true
     annotations: {}
