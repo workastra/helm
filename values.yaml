@@ -27,3 +27,8 @@ desk:
     oauth2:
       # This secret is used for the OAuth2 client secret in the desk application.
       clientSecret: ""
+
+migration:
+  image:
+    repository: ""
+    tag: ""
