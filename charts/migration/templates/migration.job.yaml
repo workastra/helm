@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "migration.fullname" . }}
+  labels:
+    {{- include "migration.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migration
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          {{- with .Values.jobs.migration.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}

@@ -56,14 +56,20 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.volumeMounts }}
           volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.volumes }}
+            - name: workastra-desk-configs
+              mountPath: "/workastra-desk/configs"
+              readOnly: true
+            - name: workastra-desk-secrets
+              mountPath: "/workastra-desk/secrets"
+              readOnly: true
       volumes:
-        {{- tpl (toYaml . | nindent 8) $ }}
-      {{- end }}
+        - name: workastra-desk-configs
+          configMap:
+            name: {{ include "desk.fullname" . }}
+        - name: workastra-desk-secrets
+          secret:
+            secretName: {{ include "desk.fullname" . }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+tasks:
+  install-cloudnativepg:
+    label: Install CloudNativePG
+    internal: true
+    cmd: kubectl apply --server-side -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.28/releases/cnpg-1.28.1.yaml
+
+  wait-for-cloudnativepg:
+    label: Wait for CloudNativePG
+    internal: true
+    cmd: kubectl -n cnpg-system rollout status deployment cnpg-controller-manager
+
+  install-postgres:
+    label: Install PostgreSQL 17.9
+    internal: true
+    cmd: |
+      kubectl apply -n "{{ .TENANT_NAME }}" -f - <<EOF
+      ---
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: postgresql-credentials
+      type: kubernetes.io/basic-auth
+      stringData:
+        username: workastra-user
+        password: secret
+
+      ---
+      apiVersion: postgresql.cnpg.io/v1
+      kind: Cluster
+      metadata:
+        name: postgresql
+      spec:
+        instances: 1
+        imageName: ghcr.io/cloudnative-pg/postgresql:17.9-standard-trixie
+        storage:
+          size: 1Gi
+        bootstrap:
+          initdb:
+            database: workastra
+            owner: workastra-user
+            secret:
+              name: postgresql-credentials
+      EOF
+
+  wait:
+    label: Wait for Postgres ready
+    cmd: kubectl -n "{{ .TENANT_NAME }}" wait cluster/postgresql --timeout=120s --for=condition=Ready
+
+  deploy:
+    label: "Deploy role: postgres"
+    cmds:
+      - task: install-cloudnativepg
+      - task: wait-for-cloudnativepg
+      - task: install-postgres
+      - task: wait
