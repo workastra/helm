@@ -60,6 +60,25 @@ tasks:
             - $(openssl rand -base64 32 | head -c 32; echo)
           oauth2:
             clientSecret: secret
+      iam:
+        image:
+          repository: "{{ .IAM_IMAGE_REPOSITORY }}"
+          tag: "{{ .IAM_IMAGE_TAG }}"
+
+        httpRoute:
+          enabled: true
+          annotations: {}
+          hostnames:
+            - {{ .DOMAIN }}
+          parentRefs:
+            - name: eg
+              namespace: default
+              sectionName: http
+          rules:
+            - matches:
+              - path:
+                  type: PathPrefix
+                  value: /iam
       EOF
 
   template:
@@ -79,3 +98,4 @@ tasks:
       - task: install
       - cmd: kubectl -n "{{ .TENANT_NAME }}" wait job/workastra-migration --for=condition=Complete --timeout=60s
       - cmd: kubectl -n "{{ .TENANT_NAME }}" rollout status deployment/workastra-desk --timeout=30s
+      - cmd: kubectl -n "{{ .TENANT_NAME }}" rollout status deployment/workastra-iam --timeout=30s

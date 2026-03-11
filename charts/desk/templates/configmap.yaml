@@ -7,7 +7,7 @@ metadata:
 data:
   .env.production: |
     APP_BASE_URL={{ .Values.global.tenant.scheme }}://{{ .Values.global.tenant.domain }}
-    IAM_ISSUER_URL=http://localhost:9000
+    IAM_ISSUER_URL={{ .Values.global.tenant.scheme }}://{{ .Values.global.tenant.domain }}/iam
     IAM_TLS_SKIP_VERIFY=true
     IAM_OAUTH_CLIENT_ID=workastra-desk
     LOCK_MODE=in-memory

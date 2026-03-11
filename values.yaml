@@ -48,3 +48,23 @@ migration:
             secretKeyRef:
               name: postgresql-credentials
               key: password
+
+iam:
+  image:
+    repository: "docker.io/workastra/platform/iam"
+    tag: "latest"
+
+  httpRoute:
+    enabled: true
+    annotations: {}
+    hostnames:
+      - workastra.com
+    parentRefs:
+      - name: eg
+        namespace: default
+        sectionName: http
+    rules:
+      - matches:
+        - path:
+            type: PathPrefix
+            value: /iam
