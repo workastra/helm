@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+tasks:
+  values:
+    internal: true
+    dir: '{{ .USER_WORKING_DIR }}'
+    cmd: |
+      tee override-values.yaml <<EOF
+      global:
+        tenant:
+          scheme: http
+          domain: {{ .DOMAIN }}
+
+      migration:
+        image:
+          repository: "{{ .MIGRATION_IMAGE_REPOSITORY }}"
+          tag: "{{ .MIGRATION_IMAGE_TAG }}"
+        jobs:
+          migration:
+            env:
+              - name: SPRING_DATASOURCE_URL
+                value: jdbc:postgresql://postgresql-rw.{{ .TENANT_NAME }}.svc.cluster.local:5432/workastra?currentSchema={{ .TENANT_NAME }}
+              - name: SPRING_DATASOURCE_USERNAME
+                valueFrom:
+                  secretKeyRef:
+                    name: postgresql-credentials
+                    key: username
+              - name: SPRING_DATASOURCE_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: postgresql-credentials
+                    key: password
+
+      desk:
+        install: true
+
+        image:
+          repository: "{{ .DESK_IMAGE_REPOSITORY }}"
+          tag: "{{ .DESK_IMAGE_TAG }}"
+
+        httpRoute:
+          enabled: true
+          annotations: {}
+          hostnames:
+            - {{ .DOMAIN }}
+          parentRefs:
+            - name: eg
+              namespace: default
+              sectionName: http
+          rules:
+            - matches:
+              - path:
+                  type: PathPrefix
+                  value: /
+
+        secrets:
+          keys:
+            - $(openssl rand -base64 32 | head -c 32; echo)
+          oauth2:
+            clientSecret: secret
+      EOF
+
+  template:
+    internal: true
+    dir: '{{ .USER_WORKING_DIR }}'
+    cmd: helm template {{ .TENANT_NAME }} -n {{ .TENANT_NAME }} -f override-values.yaml .
+  
+  install:
+    internal: true
+    dir: '{{ .USER_WORKING_DIR }}'
+    cmd: helm install {{ .TENANT_NAME }} -n {{ .TENANT_NAME }} -f override-values.yaml .
+  
+  deploy:
+    cmds:
+      - task: values
+      - task: template
+      - task: install
+      - cmd: kubectl -n "{{ .TENANT_NAME }}" wait job/workastra-migration --for=condition=Complete --timeout=60s
+      - cmd: kubectl -n "{{ .TENANT_NAME }}" rollout status deployment/workastra-desk --timeout=30s

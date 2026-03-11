@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+includes:
+  prepare:
+    taskfile: ./roles/prepare.Taskfile.yml
+  gateway:
+    taskfile: ./roles/gateway.Taskfile.yml
+  postgres:
+    taskfile: ./roles/postgres.Taskfile.yml
+  workastra:
+    taskfile: ./roles/workastra.Taskfile.yml
+
+vars:
+  TENANT_NAME: '{{ .TENANT_NAME | default "workastra" }}'
+  DOMAIN: '{{ .DOMAIN | default "workastra.com" }}'
+  MIGRATION_IMAGE_REPOSITORY: '{{ .MIGRATION_IMAGE_REPOSITORY }}'
+  MIGRATION_IMAGE_TAG: '{{ .MIGRATION_IMAGE_TAG }}'
+  DESK_IMAGE_REPOSITORY: '{{ .DESK_IMAGE_REPOSITORY }}'
+  DESK_IMAGE_TAG: '{{ .DESK_IMAGE_TAG }}'
+
+tasks:
+  deploy:
+    cmds:
+      - task: prepare:ns
+      - task: gateway:deploy
+      - task: postgres:deploy
+      - task: workastra:deploy

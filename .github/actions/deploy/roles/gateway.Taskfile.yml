@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+tasks:
+  install-envoy-gateway:
+    label: Install Envoy Gateway
+    internal: true
+    cmd: helm install eg oci://docker.io/envoyproxy/gateway-helm --version v1.7.0 -n envoy-gateway-system --create-namespace
+  
+  install-gateway-api:
+    label: Install Gateway API
+    internal: true
+    cmd: |
+      kubectl apply -f - <<EOF
+      ---
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: GatewayClass
+      metadata:
+        name: eg
+      spec:
+        controllerName: gateway.envoyproxy.io/gatewayclass-controller
+
+      ---
+      apiVersion: gateway.networking.k8s.io/v1
+      kind: Gateway
+      metadata:
+        name: eg
+      spec:
+        gatewayClassName: eg
+        listeners:
+          - name: http
+            protocol: HTTP
+            port: 80
+            allowedRoutes:
+              namespaces:
+                from: All
+      EOF
+
+  wait:
+    label: Wait for Envoy Gateway
+    internal: true
+    cmd: kubectl wait --timeout=30s -n envoy-gateway-system deployment/envoy-gateway --for=condition=Available
+
+  deploy:
+    label: "Deploy role: gateway"
+    cmds:
+      - task: install-envoy-gateway
+      - task: install-gateway-api
+      - task: wait

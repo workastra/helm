@@ -1,0 +1,50 @@
+global:
+  tenant:
+    scheme: http
+    domain: workastra.com
+
+desk:
+  install: true
+  
+  httpRoute:
+    enabled: true
+    annotations: {}
+    hostnames:
+      - workastra.com
+    parentRefs:
+      - name: eg
+        namespace: default
+        sectionName: http
+    rules:
+      - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+  secrets:
+    # The first value in the keys array will be used as the current app key, while the rest will be treated as previous keys for rotation purposes.
+    keys: []
+    oauth2:
+      # This secret is used for the OAuth2 client secret in the desk application.
+      clientSecret: ""
+
+migration:
+  image:
+    repository: "docker.io/workastra/platform/migration"
+    tag: "latest"
+
+  jobs:
+    migration:
+      env:
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:postgresql://postgresql-rw.workastra.svc.cluster.local:5432/workastra?currentSchema=workastra
+        - name: SPRING_DATASOURCE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-credentials
+              key: username
+        - name: SPRING_DATASOURCE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgresql-credentials
+              key: password
