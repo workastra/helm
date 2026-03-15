@@ -1,0 +1,52 @@
+{{- if .Values.desk.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "workastra.desk.fullname" . }}
+  labels:
+    {{- include "workastra.desk.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.desk.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "workastra.desk.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "workastra.desk.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: desk
+          image: "{{ .Values.desk.image.repository }}:{{ .Values.desk.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: {{ .Values.desk.service.port }}
+              protocol: TCP
+          {{- with .Values.desk.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.desk.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.desk.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: "/workastra-desk/configs"
+              readOnly: true
+            - name: secrets
+              mountPath: "/workastra-desk/secrets"
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "workastra.desk.fullname" . }}
+        - name: secrets
+          secret:
+            secretName: {{ include "workastra.desk.fullname" . }}
+{{- end }}

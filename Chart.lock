@@ -1,9 +1,0 @@
-dependencies:
-- name: migration
-  repository: file://charts/migration
-  version: 0.1.0
-- name: desk
-  repository: file://charts/desk
-  version: 0.3.0
-digest: sha256:f1aed3cf9ad04b2976be87f69a10e8c0b9c0379d35f4ac48112afa16b55e678d
-generated: "2026-03-08T12:00:15.382525949+07:00"

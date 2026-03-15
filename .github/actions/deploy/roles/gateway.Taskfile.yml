@@ -6,7 +6,7 @@ tasks:
   install-envoy-gateway:
     label: Install Envoy Gateway
     internal: true
-    cmd: helm install eg oci://docker.io/envoyproxy/gateway-helm --version v1.7.0 -n envoy-gateway-system --create-namespace
+    cmd: helm upgrade --install eg oci://docker.io/envoyproxy/gateway-helm --version v1.7.0 -n envoy-gateway-system --create-namespace
   
   install-gateway-api:
     label: Install Gateway API
