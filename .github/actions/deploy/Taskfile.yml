@@ -15,10 +15,12 @@ includes:
 vars:
   TENANT_NAME: '{{ .TENANT_NAME | default "workastra" }}'
   DOMAIN: '{{ .DOMAIN | default "workastra.com" }}'
-  MIGRATION_IMAGE_REPOSITORY: '{{ .MIGRATION_IMAGE_REPOSITORY }}'
-  MIGRATION_IMAGE_TAG: '{{ .MIGRATION_IMAGE_TAG }}'
-  DESK_IMAGE_REPOSITORY: '{{ .DESK_IMAGE_REPOSITORY }}'
-  DESK_IMAGE_TAG: '{{ .DESK_IMAGE_TAG }}'
+  MIGRATION_IMAGE_REPOSITORY: '{{ .MIGRATION_IMAGE_REPOSITORY | default "docker.io/workastra/platform/migration" }}'
+  MIGRATION_IMAGE_TAG: '{{ .MIGRATION_IMAGE_TAG | default "latest" }}'
+  DESK_IMAGE_REPOSITORY: '{{ .DESK_IMAGE_REPOSITORY | default "docker.io/workastra/desk" }}'
+  DESK_IMAGE_TAG: '{{ .DESK_IMAGE_TAG | default "latest" }}'
+  IAM_IMAGE_REPOSITORY: '{{ .IAM_IMAGE_REPOSITORY | default "docker.io/workastra/platform/iam" }}'
+  IAM_IMAGE_TAG: '{{ .IAM_IMAGE_TAG | default "latest" }}'
 
 tasks:
   deploy:

@@ -1,50 +1,65 @@
+# Default values for workastra.
+# This is a YAML-formatted file.
+# Declare variables to be passed into templates.
+
 global:
   tenant:
     scheme: http
     domain: workastra.com
 
+# Desk service configuration
 desk:
-  install: true
-  
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: workastra/desk
+    tag: latest
+  service:
+    port: 3000
   httpRoute:
     enabled: true
-    annotations: {}
     hostnames:
       - workastra.com
     parentRefs:
-      - name: eg
-        namespace: default
+      - name: gateway
         sectionName: http
-    rules:
-      - matches:
-        - path:
-            type: PathPrefix
-            value: /
-
   secrets:
     # The first value in the keys array will be used as the current app key, while the rest will be treated as previous keys for rotation purposes.
     keys: []
     oauth2:
       # This secret is used for the OAuth2 client secret in the desk application.
       clientSecret: ""
+  resources: {}
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
 
+# IAM service configuration
+iam:
+  replicaCount: 1
+  image:
+    repository: workastra/iam
+    tag: latest
+  service:
+    port: 9000
+  resources: {}
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+
+# Migration job configuration
 migration:
   image:
-    repository: "docker.io/workastra/platform/migration"
-    tag: "latest"
-
-  jobs:
-    migration:
-      env:
-        - name: SPRING_DATASOURCE_URL
-          value: jdbc:postgresql://postgresql-rw.workastra.svc.cluster.local:5432/workastra?currentSchema=workastra
-        - name: SPRING_DATASOURCE_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: postgresql-credentials
-              key: username
-        - name: SPRING_DATASOURCE_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: postgresql-credentials
-              key: password
+    repository: workastra/migration
+    tag: latest
+  env: []
