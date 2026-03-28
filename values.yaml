@@ -7,6 +7,14 @@ global:
     scheme: http
     domain: workastra.com
 
+httpRoute:
+  enabled: true
+  hostnames:
+    - workastra.com
+  parentRefs:
+    - name: gateway
+      sectionName: http
+
 # Desk service configuration
 desk:
   enabled: true
@@ -16,13 +24,6 @@ desk:
     tag: latest
   service:
     port: 3000
-  httpRoute:
-    enabled: true
-    hostnames:
-      - workastra.com
-    parentRefs:
-      - name: gateway
-        sectionName: http
   secrets:
     # The first value in the keys array will be used as the current app key, while the rest will be treated as previous keys for rotation purposes.
     keys: []
@@ -48,14 +49,14 @@ iam:
   service:
     port: 9000
   resources: {}
-  livenessProbe:
-    httpGet:
-      path: /
-      port: http
-  readinessProbe:
-    httpGet:
-      path: /
-      port: http
+  # livenessProbe:
+  #   httpGet:
+  #     path: /
+  #     port: http
+  # readinessProbe:
+  #   httpGet:
+  #     path: /
+  #     port: http
 
 # Migration job configuration
 migration:

@@ -12,6 +12,15 @@ tasks:
         tenant:
           scheme: http
           domain: {{ .DOMAIN }}
+      
+      httpRoute:
+        enabled: true
+        hostnames:
+          - {{ .DOMAIN }}
+        parentRefs:
+          - name: eg
+            sectionName: http
+            namespace: default
 
       migration:
         image:
@@ -35,49 +44,16 @@ tasks:
         image:
           repository: "{{ .DESK_IMAGE_REPOSITORY }}"
           tag: "{{ .DESK_IMAGE_TAG }}"
-
-        httpRoute:
-          enabled: true
-          annotations: {}
-          hostnames:
-            - {{ .DOMAIN }}
-          parentRefs:
-            - name: eg
-              namespace: default
-              sectionName: http
-          rules:
-            - matches:
-              - path:
-                  type: PathPrefix
-                  value: /
-
         secrets:
           keys:
             - $(openssl rand -base64 32 | head -c 32; echo)
           oauth2:
             clientSecret: secret
+      
       iam:
         image:
           repository: "{{ .IAM_IMAGE_REPOSITORY }}"
           tag: "{{ .IAM_IMAGE_TAG }}"
-
-        httpRoute:
-          enabled: true
-          annotations: {}
-          hostnames:
-            - {{ .DOMAIN }}
-          parentRefs:
-            - name: eg
-              namespace: default
-              sectionName: http
-          rules:
-            - matches:
-              - path:
-                  type: Exact
-                  value: /iam
-              - path:
-                  type: PathPrefix
-                  value: /iam/
       EOF
 
   template:
