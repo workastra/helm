@@ -1,9 +1,9 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "migration.fullname" . }}
+  name: {{ include "workastra.migration.fullname" . }}
   labels:
-    {{- include "migration.labels" . | nindent 4 }}
+    {{- include "workastra.migration.labels" . | nindent 4 }}
 spec:
   backoffLimit: 0
   template:
@@ -11,9 +11,9 @@ spec:
       restartPolicy: Never
       containers:
         - name: migration
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.migration.image.repository }}:{{ .Values.migration.image.tag }}"
           imagePullPolicy: IfNotPresent
-          {{- with .Values.jobs.migration.env }}
+          {{- with .Values.migration.env }}
           env:
             {{- toYaml . | nindent 12 }}
           {{- end }}

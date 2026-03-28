@@ -1,41 +1,37 @@
 # Workastra Helm Chart
 
-Deploy the Workastra application suite on Kubernetes using this Helm chart.
+Deploy the complete Workastra application suite on Kubernetes using this unified Helm chart.
 
 ## Repository Overview
 
-This repository contains Helm charts for deploying Workastra applications on Kubernetes.
+This repository contains a single Helm chart for deploying the entire Workastra stack on Kubernetes.
 
 ### Directory Structure
 
 ```
 workastra/helm/          # Main Helm charts repository
 ├── README.md            # This file - Quick start guide
-├── ct.yaml              # Chart Testing config
-├── charts/
-│   ├── workastra/       # Main parent chart
-│   │   ├── README.md    # Detailed workastra chart configuration
-│   │   ├── Chart.yaml
-│   │   ├── values.yaml
-│   │   └── charts/
-│   │       └── desk/    # Desk sub-chart dependency
-│   └── desk/            # Desk application chart source
-│       ├── README.md    # Detailed desk chart configuration
-│       ├── Chart.yaml
-│       ├── values.yaml
-│       └── templates/   # Kubernetes resource templates
+├── Chart.yaml           # Chart metadata
+├── values.yaml          # Default configuration values
+├── templates/           # Kubernetes resource templates
+│   ├── _helpers.tpl     # Helm template helpers
+│   ├── desk/            # Desk service templates
+│   ├── iam/             # IAM service templates
+│   └── migration/       # Migration job templates
+├── .github/
+│   └── actions/deploy/  # Taskfile-based deployment automation
+└── ct.yaml              # Chart Testing configuration
 ```
 
-### Charts
+### Services
 
-| Chart | Purpose | Location |
-|-------|---------|----------|
-| **workastra** | Parent chart that deploys the complete Workastra stack | `./charts/workastra/` |
-| **desk** | Desk application component with Kubernetes resources | `./charts/desk/` |
+This chart deploys three main services:
 
-For detailed configuration options of each chart, see:
-- [Workastra Chart Documentation](./charts/workastra/README.md)
-- [Desk Chart Documentation](./charts/desk/README.md)
+| Service | Purpose | Port | Always Deployed |
+|---------|---------|------|-----------------|
+| **desk** | Main application interface | 3000 | ❌ Optional |
+| **iam** | Identity and Access Management | 9000 | ✅ Core component |
+| **migration** | Database migration job | N/A | ✅ Core component |
 
 ## Prerequisites
 
@@ -43,18 +39,42 @@ For detailed configuration options of each chart, see:
 - **Helm** v3.10+
 - **Gateway API Controller** (Envoy Gateway, Kong, or NGINX Gateway)
 - **kubectl** configured
+- **Task** (optional, for automated deployment)
 
 ## Quick Start
+
+### Option 1: Manual Helm Installation
 
 ```bash
 cd /path/to/workastra/helm
 
-helm install workastra ./charts/workastra \
+# Install with default values
+helm install workastra . \
   --namespace workastra \
   --create-namespace
+
+# Or with custom values
+helm install workastra . \
+  --namespace workastra \
+  --create-namespace \
+  --set desk.image.repository=myregistry/desk \
+  --set iam.image.repository=myregistry/iam \
+  --set migration.image.repository=myregistry/migration
 ```
 
-> **Note**: Requires Gateway API resources setup first.
+### Option 2: Automated Deployment (Recommended)
+
+Use the included Taskfile for complete infrastructure setup:
+
+```bash
+cd /path/to/workastra/helm
+
+# Full deployment (gateway, postgres, workastra)
+task --dir .github/actions/deploy deploy
+
+# Or just deploy the application (requires existing infra)
+task --dir .github/actions/deploy workastra:deploy
+```
 
 ## Gateway API Setup
 
@@ -108,7 +128,7 @@ kubectl get gatewayclass
 ### Basic Install
 
 ```bash
-helm install workastra ./charts/workastra \
+helm install workastra . \
   --namespace workastra \
   --create-namespace
 ```
@@ -118,13 +138,15 @@ helm install workastra ./charts/workastra \
 Create `values.yaml`:
 
 ```yaml
+global:
+  tenant:
+    scheme: https
+    domain: workastra.example.com
+
 desk:
   replicaCount: 3
   image:
     tag: "1.0.0"
-  tenant:
-    scheme: https
-    domain: workastra.example.com
   httpRoute:
     hostnames:
       - workastra.example.com
@@ -133,11 +155,20 @@ desk:
       - "app-key"
     oauth2:
       clientSecret: "secret"
+
+iam:
+  replicaCount: 2
+  image:
+    tag: "1.0.0"
+
+migration:
+  image:
+    tag: "1.0.0"
 ```
 
 Install:
 ```bash
-helm install workastra ./charts/workastra \
+helm install workastra . \
   --namespace workastra \
   --create-namespace \
   --values values.yaml
@@ -146,7 +177,7 @@ helm install workastra ./charts/workastra \
 ### Update Installation
 
 ```bash
-helm upgrade workastra ./charts/workastra \
+helm upgrade workastra . \
   --namespace workastra \
   --values values.yaml
 ```
@@ -157,48 +188,63 @@ helm upgrade workastra ./charts/workastra \
 
 | Option | Default | Description |
 |--------|---------|-------------|
+| `global.tenant.scheme` | `http` | HTTP or HTTPS for all services |
+| `global.tenant.domain` | `workastra.com` | Domain name for routing |
 | `desk.enabled` | `true` | Enable Desk deployment |
-| `desk.replicaCount` | `1` | Number of replicas |
-| `desk.image.repository` | `docker.io/library/workastra-desk` | Image repo |
-| `desk.image.tag` | `latest` | Image tag |
-| `desk.service.port` | `3000` | Service port |
-| `desk.tenant.scheme` | `http` | HTTP or HTTPS |
-| `desk.tenant.domain` | `workastra.com` | Domain name |
-| `desk.httpRoute.enabled` | `true` | Enable HTTPRoute |
-| `desk.secrets.keys` | `[]` | App keys |
-| `desk.autoscaling.enabled` | `false` | Enable auto-scaling |
+| `desk.replicaCount` | `1` | Number of Desk replicas |
+| `desk.image.repository` | `workastra/desk` | Desk image repository |
+| `desk.image.tag` | `latest` | Desk image tag |
+| `desk.service.port` | `3000` | Desk service port |
+| `desk.httpRoute.enabled` | `true` | Enable Desk HTTPRoute |
+| `desk.httpRoute.hostnames` | `["workastra.com"]` | Desk hostnames |
+| `desk.httpRoute.parentRefs` | Gateway reference | Gateway parent references |
+| `desk.secrets.keys` | `[]` | Array of app keys (first is current, rest are previous) |
+| `desk.secrets.oauth2.clientSecret` | `""` | OAuth2 client secret |
+| `desk.resources` | `{}` | Desk resource limits/requests |
+| `iam.replicaCount` | `1` | Number of IAM replicas |
+| `iam.image.repository` | `workastra/iam` | IAM image repository |
+| `iam.image.tag` | `latest` | IAM image tag |
+| `iam.service.port` | `9000` | IAM service port |
+| `iam.resources` | `{}` | IAM resource limits/requests |
+| `migration.image.repository` | `workastra/migration` | Migration image repository |
+| `migration.image.tag` | `latest` | Migration image tag |
+| `migration.env` | `[]` | Migration environment variables |
 
 ## Common Use Cases
 
 **Development Setup:**
 ```bash
-helm install workastra ./charts/workastra \
+helm install workastra . \
   --namespace workastra --create-namespace \
-  --set desk.image.tag="dev-latest"
+  --set desk.image.tag="dev-latest" \
+  --set iam.image.tag="dev-latest" \
+  --set migration.image.tag="dev-latest"
 ```
 
 **Production Setup with HTTPS:**
 ```bash
-helm install workastra ./charts/workastra \
+helm install workastra . \
   --namespace workastra --create-namespace \
+  --set global.tenant.scheme=https \
+  --set global.tenant.domain=workastra.example.com \
   --set desk.replicaCount=3 \
-  --set desk.tenant.scheme=https \
-  --set desk.tenant.domain=workastra.example.com \
-  --set desk.autoscaling.enabled=true
+  --set iam.replicaCount=2
 ```
 
-**Scale Up:**
+**Scale Services:**
 ```bash
-helm upgrade workastra ./charts/workastra \
+helm upgrade workastra . \
   --namespace workastra \
-  --set desk.replicaCount=5
+  --set desk.replicaCount=5 \
+  --set iam.replicaCount=3
 ```
 
-**Disable HTTPRoute:**
+**Disable Components:**
 ```bash
-helm install workastra ./charts/workastra \
+helm install workastra . \
   --namespace workastra --create-namespace \
-  --set desk.httpRoute.enabled=false
+  --set desk.httpRoute.enabled=false \
+  --set desk.enabled=false
 ```
 
 ## Troubleshooting
@@ -234,8 +280,8 @@ kubectl delete namespace workastra
 ## Useful Commands
 
 ```bash
-helm install workastra ./charts/workastra -n workastra --create-namespace
-helm upgrade workastra ./charts/workastra -n workastra
+helm install workastra . -n workastra --create-namespace
+helm upgrade workastra . -n workastra
 helm status workastra -n workastra
 helm values workastra -n workastra
 helm rollback workastra 1 -n workastra

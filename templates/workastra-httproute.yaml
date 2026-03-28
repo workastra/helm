@@ -1,0 +1,41 @@
+{{- if and .Values.httpRoute.enabled .Values.httpRoute.enabled }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "workastra.fullname" . }}
+  labels:
+    {{- include "workastra.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    {{- .Values.httpRoute.parentRefs | toYaml | nindent 4 }}
+  hostnames:
+    {{- .Values.httpRoute.hostnames | toYaml | nindent 4 }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /iam
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            add:
+              - name: X-Forwarded-Prefix
+                value: /iam
+      backendRefs:
+        - name: {{ include "workastra.iam.fullname" . }}
+          port: {{ .Values.iam.service.port }}
+          weight: 1
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: {{ include "workastra.desk.fullname" . }}
+          port: {{ .Values.desk.service.port }}
+          weight: 1
+{{- end }}
